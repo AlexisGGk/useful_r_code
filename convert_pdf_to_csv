@@ -1,0 +1,24 @@
+### Here we convert the table in the supp of a paper to csv 
+### Draft code written by ChatGPT 4.0 which I then tested and tweaked
+### I copied and pasted the table into excel which resulted in no seperation by columns just blank spaces in between
+
+### I used this for the dataset from the supplementary materials of this paper 
+https://royalsocietypublishing.org/doi/suppl/10.1098/rspb.2016.0561 
+
+# By Alexis Gkantiragas 
+# 6th March 2025 
+
+# Load necessary packages
+library(tidyverse)
+
+# Read the dataset
+raw_dataset <- read.csv("~/Downloads/dataset_for_r_splitting.csv", header = FALSE, stringsAsFactors = FALSE)
+
+# Separate into columns at each blank space
+cleaned_dataset <- raw_dataset %>%
+  separate(V1, into = paste0("col", 1:10), sep = "\\s+", fill = "right", extra = "merge") 
+
+# View result
+print(cleaned_dataset) # note may be mistakes in some columns - check and edit manually in excel
+
+
