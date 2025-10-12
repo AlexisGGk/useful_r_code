@@ -1,0 +1,82 @@
+### Script: PCA for bioclimatic data
+### Author: Alexis Gkantiragas
+### Date: 2025-10-12
+### Language: R (in Rstudio)
+### Description: extracts bioclim data for any GBIF species and runs a PCA
+
+#### Load necessary libraries ---- 
+library(ggfortify)
+library(ggplot2)
+library(plotly)
+library(terra)
+library(raster)
+library(rgbif)
+#### end libraries ----
+
+#### - get your data ---- 
+# Retrieve global occurrences for multiple species
+spp <- c("Bombus terrestris terrestris", "Apis mellifera mellifera")
+occ_data <- occ_search(scientificName = spp, limit = 200)
+# used a limit of 200 because we don't want to cook your laptops 
+
+# Combine all GBIF occurrence results into a single data frame
+# Keep only coords + species name
+occ_df <- do.call(rbind, lapply(occ_data, function(x) x$data[, 2:4]))
+
+# Download data for the bioclimatic variables
+# Note this is low res so that it doesn't take so long to run
+bioclim_data <- worldclim_global(var = "bio",
+                                 res = 10, # mod this to increase res (5 or 2.5)
+                                 path = "~/")
+
+
+# If tidyr is attached the code will catch fire 
+# you can detach it with this line below
+# detach("package:tidyr", unload = TRUE, character.only = TRUE)
+
+### NOTE UNLOAD TIDYR OR IT WONT WORK BECAUSE R IS STUPID 
+bioclim_extracted_for_pca <- extract(x = bioclim_data,
+                                     y = occ_df[, c("decimalLongitude", "decimalLatitude")],
+                                     ID = FALSE) # No need for an ID column
+
+# Here we add on the dataset
+combined_dataset_for_pca <- cbind(bioclim_extracted_for_pca, occ_df)
+
+
+#### extract variables and run the PCA ----
+
+#  this gets the bioclimatic variables for our occurances 
+bioclim_extracted <- terra::extract(
+  x = bioclim_data,
+  y = vect(occ_df[, c("decimalLongitude", "decimalLatitude")], 
+           geom = c("decimalLongitude", "decimalLatitude"), 
+           crs = "EPSG:4326")
+)
+
+# --- Clean and combine data ---
+# The 'extract' function returns a data.frame with an 'ID' column and the variable columns.
+# We need to remove rows with NA values, which can occur if points fall outside the raster.
+valid_rows <- complete.cases(bioclim_extracted)
+
+# Subset both the extracted climate data and the original occurrence data to keep them in sync.
+# We also remove the 'ID' column from the extracted data as it's not needed for PCA.
+pca_data <- bioclim_extracted[valid_rows, -1] 
+occ_df_clean <- occ_df[valid_rows, ]
+
+# --- Run PCA ---
+# It MUST BE NUMERIC ONLY
+# The 'pca_data' data.frame now contains only the bioclim variables.
+pca_result <- prcomp(pca_data, center = TRUE, scale. = TRUE)
+
+# --- Plot PCA using ggfortify ---
+autoplot(
+  pca_result,
+  data = occ_df_clean,              
+  colour = 'scientificName',        # Use the column name for color
+  alpha = 0.5,
+  size = 3,
+  loadings = FALSE,                
+  frame = TRUE,                     # This will draw ellipses around the groups
+  frame.type = 'norm'
+) +
+  theme_minimal() 
