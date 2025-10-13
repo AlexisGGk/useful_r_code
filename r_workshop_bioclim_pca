@@ -11,6 +11,7 @@ library(plotly)
 library(terra)
 library(raster)
 library(rgbif)
+library(geodata)
 #### end libraries ----
 
 #### - get your data ---- 
