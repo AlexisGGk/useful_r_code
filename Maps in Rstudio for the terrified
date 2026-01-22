@@ -1,0 +1,106 @@
+### Script: Maps in Rstudio for the terrified 
+### Author: Alexis Gkantiragas
+### Date: 2026-02-22
+### Language: R
+### Description: maps scripts for RHUL R workshop
+
+# we can load base maps extremeley simply 
+library(maps) # this is the basic maps package 
+
+# this produces a base map of the world 
+map()
+
+# we can shift the focus with c()
+map(wrap = c(0,360)) # pacific-centered map of the world
+
+
+# Confusingly it goes +/- 360 
+# We can crop it e.g. to only show the right half of the map
+map(xlim = c(0, 360))   # longitude range (degrees east)
+
+# Using xlim and ylim we can focus in on a smaller area 
+# here we focus in on india
+map(xlim = c(60, 100),  ylim = c(0, 35))
+
+
+# we can do this more elegantly though
+# here we define a shape file 
+library(rnaturalearth)
+# here we make a variable that defines our base map 
+uk <- ne_countries(scale = "large", country = "United Kingdom")
+# ^^ the scale function here functions like resolution
+
+# now we plot our map 
+ggplot() +
+  geom_sf(data = uk)
+
+
+# like any ggplot object we can make it pretty 
+ggplot() +
+  geom_sf(data = uk, fill = "lightpink", color = "black") +
+  coord_sf(xlim = c(-8, 2), ylim = c(49, 61)) +
+  theme_minimal(base_size = 14) +
+  labs(color = "") +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+# now lets say we have some sites we would like to plot 
+# First lets load in our points 
+lon <- c(-0.56,-2)
+lat <- c(51.4, 55)
+df <- as.data.frame(cbind(lon,lat))
+
+# we have to turn this into a shape file (sf)
+# crs stands for coordinate reference system
+sites_sf <- st_as_sf(df, coords = c("lon", "lat"), crs = 4326)
+
+# now lets plot our points on the map 
+ggplot() +
+  geom_sf(data = uk, fill = "lightpink", color = "black") +
+  coord_sf(xlim = c(-8, 2), ylim = c(49, 61)) +
+  geom_sf(data = sites_sf, size = 2, alpha = 0.7) +
+  theme_minimal(base_size = 14) +
+  labs(color = "") +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  )
+
+
+# Now lets try plotting a species distribution 
+
+library(rgbif)
+
+#### - get your data ---- 
+# Retrieve global occurrences for multiple species
+spp <- c("Bombus terrestris terrestris")
+occ_data <- occ_search(scientificName = spp, limit = 1000)
+# used a limit of 1000 because we don't want to cook your laptops 
+
+#crop our dataset 
+occ_df <- occ_data$data[, 2:4]
+
+# we need to get rid of NA values 
+occ_df <- occ_df[!is.na(occ_df$decimalLongitude) &
+                   !is.na(occ_df$decimalLatitude), ]
+# convert to shapefile 
+sites_sf <- st_as_sf(
+  occ_df,
+  coords = c("decimalLongitude", "decimalLatitude"),
+  crs = 4326
+)
+
+
+# Now lets plot our occurences 
+# you can modify the name of the species and it should retrieve any that are on GBIF 
+ggplot() +
+  geom_sf(data = world, fill = "white", color = "black") +
+  geom_sf(data = sites_sf, size = 2, alpha = 0.7) +
+  theme_minimal(base_size = 14) +
+  labs(color = "") +
+  theme(
+    axis.text = element_blank(),
+    axis.ticks = element_blank()
+  )
