@@ -4,7 +4,15 @@
 ### Language: R
 ### Description: maps scripts for RHUL R workshop
 
-# we can load base maps extremeley simply 
+# Run using Rstudio, R version 4.4.1 (2024-06-14)
+
+# first load our packages 
+library(ggplot2)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(rnaturalearthhires)
+library(sf)
+library(rgbif)
 library(maps) # this is the basic maps package 
 
 # this produces a base map of the world 
@@ -71,7 +79,6 @@ ggplot() +
 
 # Now lets try plotting a species distribution 
 
-library(rgbif)
 
 # using rnaturalearth + sf
 world <- rnaturalearth::ne_countries(
