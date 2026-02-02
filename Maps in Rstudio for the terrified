@@ -73,6 +73,12 @@ ggplot() +
 
 library(rgbif)
 
+# using rnaturalearth + sf
+world <- rnaturalearth::ne_countries(
+  scale = "medium",
+  returnclass = "sf"
+)
+
 #### - get your data ---- 
 # Retrieve global occurrences for multiple species
 spp <- c("Bombus terrestris terrestris")
